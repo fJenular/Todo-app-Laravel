@@ -1,301 +1,415 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="container py-4">
+@push('styles')
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+@endpush
 
-    <style>
-    /* Buttons */
-    .btn-complete{border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.08);transition:transform .15s ease,box-shadow .15s ease,background-color .15s ease}
-    .btn-complete .ri-checkbox-circle-line{transition:transform .15s ease}
-    .btn-complete:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 18px rgba(0,0,0,0.12)}
-    .btn-sm.btn-complete{padding-left:.9rem;padding-right:.9rem}
-    .btn-ghost{transition:opacity .15s ease,transform .15s ease}
-    .btn-ghost:hover{opacity:.95;transform:translateY(-1px)}
+@section('content')
 
-    /* Icons */
-    .ri-edit-line,.ri-delete-bin-6-line,.ri-checkbox-circle-line{vertical-align:middle}
+<div class="h-screen flex flex-col bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
 
-    /* Table row animation */
-    @keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    .animate-row{animation:fadeInUp .35s ease both;transition:box-shadow .15s ease,transform .15s ease}
-    .animate-row:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+    <!-- ================= HEADER + STATS (FIXED) ================= -->
+    <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
 
-    /* Progress bar */
-    .progress-bar{transition:width .7s cubic-bezier(.2,.9,.3,1)}
+        <div class="px-10 py-8">
 
-    /* Small helpers */
-    .text-muted-soft{color:rgba(0,0,0,0.55)}
-    /* Modern table: rounded, minimal, subtle hover */
-    .table-card{border-radius:12px;overflow:hidden}
-    .table-modern{border-collapse:separate;border-spacing:0;background:transparent}
-    .table-modern thead th{background:transparent;color:#111;font-weight:600;border-bottom:none;padding:.9rem 1rem}
-    .table-modern td,.table-modern th{padding:.75rem 1rem;vertical-align:middle;border-top:none}
-    .table-modern tbody tr{transition:background .18s ease,transform .18s ease}
-    .table-modern tbody tr:hover{background:rgba(13,110,253,0.04);transform:translateY(-2px)}
-    .table-modern tbody tr:nth-child(odd) td{background:rgba(0,0,0,0.02)}
-    .table-modern .badge{border-radius:999px;padding:.35em .6em}
-    .table-responsive{overflow:hidden;border-radius:12px}
-    /* soften card */
-    .card.table-card{border-radius:12px}
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-800 dark:text-white">
+                        Task Dashboard
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Organize your workflow with clarity and focus.
+                    </p>
+                </div>
 
-    /* Dark mode styles */
-    .dark-mode{background:#071022;color:#e6eef8}
-    .dark-mode .container{color:#e6eef8}
-    .dark-mode .card{background:#0b1220 !important;color:var(--muted)}
-    .dark-mode .table-modern td,.dark-mode .table-modern th{color:#dbeafe}
-    .dark-mode .table-modern tbody tr:hover{background:rgba(255,255,255,0.03)}
-    .dark-mode .table-modern tbody tr:nth-child(odd) td{background:rgba(255,255,255,0.02)}
-    .dark-mode .badge{box-shadow:none}
-    .dark-mode .badge.bg-warning{background:#f59e0b;color:#0f1724}
-    .dark-mode .badge.bg-success{background:#16a34a;color:#ecfdf5}
-    .dark-mode .btn-complete{box-shadow:0 6px 20px rgba(2,6,23,0.6)}
-    .dark-mode .btn-outline-primary,.dark-mode .btn-outline-danger,.dark-mode .btn-outline-secondary{border-color:rgba(255,255,255,0.06);color:#dbeafe}
-    .dark-mode .progress{background:rgba(255,255,255,0.04)}
-    .dark-mode .progress-bar.bg-info{background:#38bdf8}
-    .dark-mode .ri-edit-line,.dark-mode .ri-delete-bin-6-line,.dark-mode .ri-checkbox-circle-line{color:inherit}
-    </style>
-
-    <h2 class="fw-bold mb-4">Dashboard</h2>
-
-    {{-- ANALYTICS --}}
-    <div class="row g-4 mb-4">
-
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 bg-primary-subtle">
-                <small>Total Tasks</small>
-                <h3>{{ $todo->count() + $completed->count() }}</h3>
+                <!-- Dark Mode Toggle -->
+                <button id="darkToggle" type="button"
+                    class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:scale-105 transition flex items-center justify-center"
+                    aria-pressed="false" title="Toggle dark mode">
+                    <i id="iconMoon" class="ri-moon-line text-lg text-gray-700" aria-hidden="true"></i>
+                    <i id="iconSun" class="ri-sun-line text-lg text-yellow-400" aria-hidden="true" style="display:none"></i>
+                </button>
             </div>
-        </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 bg-warning-subtle">
-                <small>Pending</small>
-                <h3 class="text-warning">{{ $todo->count() }}</h3>
-            </div>
-        </div>
+            <!-- Stats -->
+            <div class="grid md:grid-cols-4 gap-6">
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 bg-success-subtle">
-                <small>Completed</small>
-                <h3 class="text-success">{{ $completed->count() }}</h3>
-            </div>
-        </div>
+                <!-- PRIMARY CARD -->
+                <div class="p-6 rounded-2xl bg-indigo-600 text-white shadow-lg">
+                    <p class="text-xs uppercase tracking-wider opacity-80">Total Tasks</p>
+                    <h2 class="text-3xl font-bold mt-3">
+                        {{ $todo->count() + $completed->count() }}
+                    </h2>
+                </div>
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 bg-info-subtle">
-                <small>Progress</small>
-                <h4>{{ $progress }}%</h4>
-                <div class="progress" style="height:6px;">
-                    <div class="progress-bar bg-info"
-                         style="width: {{ $progress }}%">
+                <!-- Secondary -->
+                <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow">
+                    <p class="text-xs uppercase tracking-wider text-gray-500">Pending</p>
+                    <h2 class="text-2xl font-semibold mt-3 text-yellow-500">
+                        {{ $todo->count() }}
+                    </h2>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow">
+                    <p class="text-xs uppercase tracking-wider text-gray-500">Completed</p>
+                    <h2 class="text-2xl font-semibold mt-3 text-emerald-500">
+                        {{ $completed->count() }}
+                    </h2>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow">
+                    <p class="text-xs uppercase tracking-wider text-gray-500">Progress</p>
+                    <div class="mt-4">
+                        <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                            <div class="h-2 bg-indigo-600 rounded-full transition-all duration-500"
+                                style="width: {{ $progress }}%">
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-3">{{ $progress }}%</p>
                     </div>
                 </div>
+
             </div>
-        </div>
 
-    </div>
-
-    {{-- SEARCH + ADD --}}
-    <div class="d-flex justify-content-between mb-3">
-        <form method="GET" class="w-50">
-            <input type="text" name="search"
-                   value="{{ $search }}"
-                   class="form-control"
-                   placeholder="Search task...">
-        </form>
-
-        <div class="d-flex align-items-center gap-2">
-            <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary d-flex align-items-center"
-                    type="button"
-                    aria-pressed="false"
-                    title="Toggle dark mode">
-                <i class="ri-moon-line"></i>
-            </button>
-
-            <button class="btn btn-dark d-flex align-items-center gap-2"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addTaskModal">
-                <i class="ri-add-line"></i>
-                <span>Add Task</span>
-            </button>
         </div>
     </div>
 
-    {{-- TABLE --}}
-    <div class="card border-0 shadow-sm table-card">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0 table-borderless table-modern">
-                <thead>
+    <!-- ================= TABLE AREA (SCROLLABLE) ================= -->
+
+    <div class="flex-1 overflow-auto px-10 py-8">
+
+        <!-- Search + Add -->
+            <div class="flex justify-between items-center mb-6">
+
+            <form method="GET" class="w-1/3">
+                <input type="text" name="search" value="{{ $search }}"
+                    placeholder="Search task..."
+                    class="w-full px-5 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </form>
+
+            <button id="openAddModal" type="button"
+                class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-full shadow transition">
+                <i class="ri-add-line mr-2"></i> Add Task
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow overflow-hidden">
+
+            <table class="w-full text-sm">
+
+                <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 uppercase text-xs tracking-wider">
                     <tr>
-                        <th>Title</th>
-                        <th>Deadline</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th width="150">Actions</th>
+                        <th class="px-6 py-4 text-left">Title</th>
+                        <th class="px-6 py-4 text-left">Deadline</th>
+                        <th class="px-6 py-4 text-left">Priority</th>
+                        <th class="px-6 py-4 text-left">Status</th>
+                        <th class="px-6 py-4 text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
 
-                @foreach($todo as $task)
-                <tr class="animate-row">
-                    <td>{{ $task->title }}</td>
-                    <td>{{ $task->deadline }}</td>
-                    <td>
-                        <span class="badge
-                            @if($task->priority=='high') bg-danger
-                            @elseif($task->priority=='medium') bg-warning
-                            @else bg-secondary
-                            @endif">
-                            {{ ucfirst($task->priority) }}
-                        </span>
-                    </td>
-                    <td><span class="badge bg-warning text-dark">Pending</span></td>
-                    <td class="d-flex gap-2">
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
 
-                        <form action="/tasks/{{ $task->id }}/complete" method="POST" class="me-1">
-                            @csrf
-                            @method('PATCH')
-                            <button class="btn btn-sm btn-success btn-complete d-flex align-items-center gap-2 fw-semibold px-3 text-nowrap"
-                                    title="Mark as complete"
-                                    aria-label="Mark task {{ $task->title }} as complete">
-                                <i class="ri-checkbox-circle-line fs-5"></i>
-                                <span class="fw-semibold">Complete</span>
-                            </button>
-                        </form>
+                    @foreach($todo as $task)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <td class="px-6 py-5 font-medium text-gray-800 dark:text-gray-100">
+                            {{ $task->title }}
+                        </td>
 
-                        <button class="btn btn-sm btn-outline-primary btn-ghost me-1 d-flex align-items-center"
-                                data-bs-toggle="modal"
-                                data-bs-target="#edit{{ $task->id }}"
-                                title="Edit task">
-                            <i class="ri-edit-line fs-6"></i>
-                        </button>
+                        <td class="px-6 py-5 text-gray-500">
+                            {{ $task->deadline }}
+                        </td>
 
-                        <form action="/tasks/{{ $task->id }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-outline-danger btn-ghost d-flex align-items-center"
-                                    title="Delete task">
-                                <i class="ri-delete-bin-6-line fs-6"></i>
-                            </button>
-                        </form>
+                        <td class="px-6 py-5">
+                            <span class="px-3 py-1 text-xs rounded-full bg-indigo-100 text-indigo-600">
+                                {{ ucfirst($task->priority) }}
+                            </span>
+                        </td>
 
-                    </td>
-                </tr>
-                @endforeach
+                        <td class="px-6 py-5">
+                            <span class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-600">
+                                Pending
+                            </span>
+                        </td>
 
-                @foreach($completed as $task)
-                <tr class="table-light animate-row">
-                    <td class="text-decoration-line-through">
-                        {{ $task->title }}
-                    </td>
-                    <td>{{ $task->deadline }}</td>
-                    <td><span class="badge bg-success">Done</span></td>
-                    <td><span class="badge bg-success">Completed</span></td>
-                    <td>
-                        <form action="/tasks/{{ $task->id }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-outline-danger d-flex align-items-center">
-                                <i class="ri-delete-bin-6-line"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
+                        <!-- ACTION HIERARCHY -->
+                        <td class="px-6 py-5 text-center">
+                            <div class="flex justify-center items-center gap-3">
+
+                                <!-- PRIMARY -->
+                                <form action="/tasks/{{ $task->id }}/complete" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button class="px-4 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                                        Done
+                                    </button>
+                                </form>
+
+                                <!-- ICON EDIT -->
+                                <button type="button"
+                                    class="text-blue-500 hover:scale-110 transition openEditModal"
+                                    data-id="{{ $task->id }}"
+                                    data-title="{{ htmlspecialchars($task->title, ENT_QUOTES) }}"
+                                    data-deadline="{{ $task->deadline }}"
+                                    data-priority="{{ $task->priority }}">
+                                    <i class="ri-edit-line text-lg" aria-hidden="true"></i>
+                                </button>
+
+                                <!-- ICON DELETE -->
+                                <form action="/tasks/{{ $task->id }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="text-red-500 hover:scale-110 transition">
+                                        <i class="ri-delete-bin-6-line text-lg" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+
+                    @foreach($completed as $task)
+                    <tr class="opacity-60">
+                        <td class="px-6 py-5 line-through text-gray-400">
+                            {{ $task->title }}
+                        </td>
+
+                        <td class="px-6 py-5 text-gray-400">
+                            {{ $task->deadline }}
+                        </td>
+
+                        <td class="px-6 py-5">
+                            <span class="px-3 py-1 text-xs rounded-full bg-emerald-100 text-emerald-600">
+                                Done
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-5">
+                            <span class="px-3 py-1 text-xs rounded-full bg-emerald-100 text-emerald-600">
+                                Completed
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-5 text-center">
+                            <form action="/tasks/{{ $task->id }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button class="text-red-500 hover:scale-110 transition">
+                                    <i class="ri-delete-bin-6-line text-lg" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
 
                 </tbody>
+
             </table>
+
         </div>
     </div>
 
 </div>
 
-{{-- ADD MODAL --}}
-<div class="modal fade" id="addTaskModal">
-    <div class="modal-dialog">
-        <form method="POST" action="/tasks" class="modal-content">
+<!-- ADD TASK MODAL (Tailwind) -->
+<div id="addTaskModal" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+    <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" data-close="true"></div>
+    <div class="modal-panel bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl shadow-2xl max-w-lg w-full z-10 p-6 mx-auto transform transition-all duration-200 ease-out scale-95 opacity-0">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <i class="ri-add-line text-xl text-indigo-600"></i>
+                <span>Add Task</span>
+            </h3>
+                <button type="button" data-close="true" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 rounded-md p-1">
+                <i class="ri-close-line text-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="/tasks">
             @csrf
-            <div class="modal-header">
-                <h5>Add Task</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="text" name="title" class="form-control mb-3" placeholder="Title" required>
-                <input type="date" name="deadline" class="form-control mb-3" required>
-                <select name="priority" class="form-select">
+            <div class="space-y-3">
+                <input name="title" type="text" required placeholder="Title" class="w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-600">
+                <input name="deadline" type="date" required class="w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-600">
+                <select name="priority" class="w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-600">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                 </select>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-dark">Save</button>
+            <div class="mt-6 flex justify-end gap-2">
+                <button type="button" data-close="true" class="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded bg-indigo-600 text-white text-sm shadow hover:shadow-md">Save</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- EDIT MODAL --}}
-@foreach($todo as $task)
-<div class="modal fade" id="edit{{ $task->id }}">
-    <div class="modal-dialog">
-        <form method="POST" action="/tasks/{{ $task->id }}" class="modal-content">
+<!-- EDIT TASK MODAL (reused) -->
+<div id="editTaskModal" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+    <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" data-close="true"></div>
+    <div class="modal-panel bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl shadow-2xl max-w-lg w-full z-10 p-6 mx-auto transform transition-all duration-200 ease-out scale-95 opacity-0">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <i class="ri-edit-line text-xl text-yellow-500"></i>
+                <span>Edit Task</span>
+            </h3>
+            <button type="button" data-close="true" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 rounded-md p-1">
+                <i class="ri-close-line text-lg"></i>
+            </button>
+        </div>
+        <form id="editForm" method="POST" action="/tasks/0">
             @csrf
             @method('PATCH')
-            <div class="modal-header">
-                <h5>Edit Task</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="text" name="title"
-                       value="{{ $task->title }}"
-                       class="form-control mb-3" required>
-                <input type="date" name="deadline"
-                       value="{{ $task->deadline }}"
-                       class="form-control mb-3" required>
-                <select name="priority" class="form-select">
-                    <option value="low" {{ $task->priority=='low'?'selected':'' }}>Low</option>
-                    <option value="medium" {{ $task->priority=='medium'?'selected':'' }}>Medium</option>
-                    <option value="high" {{ $task->priority=='high'?'selected':'' }}>High</option>
+            <div class="space-y-3">
+                <input id="editTitle" name="title" type="text" required placeholder="Title" class="w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-600">
+                <input id="editDeadline" name="deadline" type="date" required class="w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-600">
+                <select id="editPriority" name="priority" class="w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-600">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
                 </select>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-dark">Update</button>
+            <div class="mt-6 flex justify-end gap-2">
+                <button type="button" data-close="true" class="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded bg-indigo-600 text-white text-sm shadow hover:shadow-md">Update</button>
             </div>
         </form>
     </div>
 </div>
-@endforeach
 
 @endsection
 
+@push('scripts')
 <script>
 (function(){
-    const key = 'darkMode';
-    const toggle = document.getElementById('darkModeToggle');
-    const cls = 'dark-mode';
-    function applyMode(isDark){
-        if(isDark) document.documentElement.classList.add(cls);
-        else document.documentElement.classList.remove(cls);
-        if(toggle){
-            toggle.innerHTML = isDark ? '<i class="ri-sun-line"></i>' : '<i class="ri-moon-line"></i>';
-            toggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-            toggle.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
-        }
+    const btn = document.getElementById('darkToggle');
+    if(!btn) return;
+    const moon = document.getElementById('iconMoon');
+    const sun = document.getElementById('iconSun');
+
+    // read saved preference, fall back to system preference
+    function prefersDark() {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
-    try{
-        const saved = localStorage.getItem(key);
-        const prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        let isDark = (saved === null) ? prefers : saved === '1';
-        applyMode(isDark);
-        if(toggle){
-            toggle.addEventListener('click', function(){
-                isDark = !document.documentElement.classList.contains(cls);
-                applyMode(isDark);
-                localStorage.setItem(key, isDark ? '1' : '0');
-            });
+
+    function isSavedDark(){
+        try{ return localStorage.getItem('darkMode') === '1'; }catch(e){return null}
+    }
+
+    function setDark(on, persist=true){
+        if(on) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        if(persist){
+            try{ localStorage.setItem('darkMode', on ? '1' : '0'); }catch(e){}
         }
-    }catch(e){console.warn('dark mode init failed', e)}
+        // update icons / aria
+        moon.style.display = on ? 'none' : 'inline-block';
+        sun.style.display = on ? 'inline-block' : 'none';
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+
+    // initialize: default to dark mode when no saved preference
+    const saved = isSavedDark();
+    if(saved === true) setDark(true, false);
+    else if(saved === false) setDark(false, false);
+    else setDark(true, false);
+
+    btn.addEventListener('click', function(){
+        const now = document.documentElement.classList.contains('dark');
+        setDark(!now, true);
+    });
 })();
 </script>
+<script>
+// Modal handling (add / edit)
+(function(){
+    const modalTransitionMs = 220;
+    function openModal(modal){
+        if(!modal) return;
+        const panel = modal.querySelector('.modal-panel');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        // allow DOM to update then animate
+        requestAnimationFrame(function(){
+            if(panel){
+                panel.classList.remove('opacity-0','scale-95');
+                panel.classList.add('opacity-100','scale-100');
+            }
+        });
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModal(modal){
+        if(!modal) return;
+        const panel = modal.querySelector('.modal-panel');
+        if(panel){
+            panel.classList.remove('opacity-100','scale-100');
+            panel.classList.add('opacity-0','scale-95');
+        }
+        // wait for transition then hide
+        setTimeout(function(){
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }, modalTransitionMs);
+    }
+
+    // global close handlers
+    document.querySelectorAll('[data-close]').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+            // find parent modal
+            const modal = btn.closest('#addTaskModal, #editTaskModal');
+            closeModal(modal);
+        });
+    });
+
+    // overlay click
+    document.querySelectorAll('#addTaskModal [data-close], #editTaskModal [data-close]').forEach(function(el){
+        el.addEventListener('click', function(e){
+            const modal = el.closest('#addTaskModal, #editTaskModal');
+            closeModal(modal);
+        });
+    });
+
+    // open add modal
+    const openAdd = document.getElementById('openAddModal');
+    if(openAdd){
+        openAdd.addEventListener('click', function(){
+            const m = document.getElementById('addTaskModal');
+            // reset form
+            m.querySelector('form').reset();
+            openModal(m);
+        });
+    }
+
+    // open edit modal buttons
+    document.querySelectorAll('.openEditModal').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            const id = btn.getAttribute('data-id');
+            const title = btn.getAttribute('data-title') || '';
+            const deadline = btn.getAttribute('data-deadline') || '';
+            const priority = btn.getAttribute('data-priority') || 'low';
+
+            const m = document.getElementById('editTaskModal');
+            const form = document.getElementById('editForm');
+            form.action = '/tasks/' + id;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editDeadline').value = deadline;
+            document.getElementById('editPriority').value = priority;
+            openModal(m);
+        });
+    });
+
+    // close on ESC
+    window.addEventListener('keydown', function(e){
+        if(e.key === 'Escape'){
+            ['addTaskModal','editTaskModal'].forEach(function(id){
+                const m = document.getElementById(id);
+                if(m && m.classList.contains('flex')) closeModal(m);
+            });
+        }
+    });
+})();
+</script>
+@endpush
